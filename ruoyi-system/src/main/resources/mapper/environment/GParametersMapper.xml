@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.environment.mapper.GParametersMapper">
+    
+    <resultMap type="GParameters" id="GParametersResult">
+        <result property="id"    column="id"    />
+        <result property="unitLoad"    column="unit_load"    />
+        <result property="backPressure"    column="back_pressure"    />
+        <result property="outletTemperature"    column="outlet_temperature"    />
+        <result property="pumpFrequency"    column="pump_frequency"    />
+        <result property="pumpPressure"    column="pump_pressure"    />
+        <result property="pumpCurrent"    column="pump_current"    />
+        <result property="outletFlow"    column="outlet_flow"    />
+        <result property="recordTime"    column="record_time"    />
+    </resultMap>
+
+    <sql id="selectGParametersVo">
+        select id, unit_load, back_pressure, outlet_temperature, pump_frequency, pump_pressure, pump_current, outlet_flow, record_time from global_parameters
+    </sql>
+
+    <select id="selectGParametersList" parameterType="GParameters" resultMap="GParametersResult">
+        <include refid="selectGParametersVo"/>
+        <where>  
+            <if test="recordTime != null "> and record_time like concat('%', #{recordTime}, '%')</if>
+        </where>
+    </select>
+    
+    <select id="selectGParametersById" parameterType="Long" resultMap="GParametersResult">
+        <include refid="selectGParametersVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertGParameters" parameterType="GParameters" useGeneratedKeys="true" keyProperty="id">
+        insert into global_parameters
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="unitLoad != null">unit_load,</if>
+            <if test="backPressure != null">back_pressure,</if>
+            <if test="outletTemperature != null">outlet_temperature,</if>
+            <if test="pumpFrequency != null">pump_frequency,</if>
+            <if test="pumpPressure != null">pump_pressure,</if>
+            <if test="pumpCurrent != null">pump_current,</if>
+            <if test="outletFlow != null">outlet_flow,</if>
+            <if test="recordTime != null">record_time,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="unitLoad != null">#{unitLoad},</if>
+            <if test="backPressure != null">#{backPressure},</if>
+            <if test="outletTemperature != null">#{outletTemperature},</if>
+            <if test="pumpFrequency != null">#{pumpFrequency},</if>
+            <if test="pumpPressure != null">#{pumpPressure},</if>
+            <if test="pumpCurrent != null">#{pumpCurrent},</if>
+            <if test="outletFlow != null">#{outletFlow},</if>
+            <if test="recordTime != null">#{recordTime},</if>
+         </trim>
+    </insert>
+
+    <update id="updateGParameters" parameterType="GParameters">
+        update global_parameters
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="unitLoad != null">unit_load = #{unitLoad},</if>
+            <if test="backPressure != null">back_pressure = #{backPressure},</if>
+            <if test="outletTemperature != null">outlet_temperature = #{outletTemperature},</if>
+            <if test="pumpFrequency != null">pump_frequency = #{pumpFrequency},</if>
+            <if test="pumpPressure != null">pump_pressure = #{pumpPressure},</if>
+            <if test="pumpCurrent != null">pump_current = #{pumpCurrent},</if>
+            <if test="outletFlow != null">outlet_flow = #{outletFlow},</if>
+            <if test="recordTime != null">record_time = #{recordTime},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteGParametersById" parameterType="Long">
+        delete from global_parameters where id = #{id}
+    </delete>
+
+    <delete id="deleteGParametersByIds" parameterType="String">
+        delete from global_parameters where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

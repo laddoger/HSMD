@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.environment.mapper.WSpeedDataMapper">
+    
+    <resultMap type="WSpeedData" id="WSpeedDataResult">
+        <result property="id"    column="id"    />
+        <result property="sector"    column="sector"    />
+        <result property="sensor"    column="sensor"    />
+        <result property="windSpeed"    column="wind_speed"    />
+        <result property="windDirection"    column="wind_direction"    />
+        <result property="recordTime"    column="record_time"    />
+    </resultMap>
+
+    <sql id="selectWSpeedDataVo">
+        select id, sector, sensor, wind_speed, wind_direction, record_time from wind_speed_data
+    </sql>
+
+    <select id="selectWSpeedDataList" parameterType="WSpeedData" resultMap="WSpeedDataResult">
+        <include refid="selectWSpeedDataVo"/>
+        <where>  
+            <if test="sector != null "> and sector = #{sector}</if>
+            <if test="sensor != null "> and sensor = #{sensor}</if>
+            <if test="recordTime != null "> and record_time like concat('%', #{recordTime}, '%')</if>
+        </where>
+    </select>
+    
+    <select id="selectWSpeedDataById" parameterType="Long" resultMap="WSpeedDataResult">
+        <include refid="selectWSpeedDataVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertWSpeedData" parameterType="WSpeedData" useGeneratedKeys="true" keyProperty="id">
+        insert into wind_speed_data
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="sector != null">sector,</if>
+            <if test="sensor != null">sensor,</if>
+            <if test="windSpeed != null">wind_speed,</if>
+            <if test="windDirection != null">wind_direction,</if>
+            <if test="recordTime != null">record_time,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="sector != null">#{sector},</if>
+            <if test="sensor != null">#{sensor},</if>
+            <if test="windSpeed != null">#{windSpeed},</if>
+            <if test="windDirection != null">#{windDirection},</if>
+            <if test="recordTime != null">#{recordTime},</if>
+         </trim>
+    </insert>
+
+    <update id="updateWSpeedData" parameterType="WSpeedData">
+        update wind_speed_data
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="sector != null">sector = #{sector},</if>
+            <if test="sensor != null">sensor = #{sensor},</if>
+            <if test="windSpeed != null">wind_speed = #{windSpeed},</if>
+            <if test="windDirection != null">wind_direction = #{windDirection},</if>
+            <if test="recordTime != null">record_time = #{recordTime},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteWSpeedDataById" parameterType="Long">
+        delete from wind_speed_data where id = #{id}
+    </delete>
+
+    <delete id="deleteWSpeedDataByIds" parameterType="String">
+        delete from wind_speed_data where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>
