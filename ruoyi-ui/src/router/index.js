@@ -1,8 +1,6 @@
 import { createWebHistory, createRouter } from 'vue-router'
 /* Layout */
 import Layout from '@/layout'
-// 在 index.js 顶部加入
-import environmentRouter from '@/router/modules/environment'
 /**
  * Note: 路由配置项
  *
@@ -84,8 +82,7 @@ export const constantRoutes = [
         meta: { title: '个人中心', icon: 'user' }
       }
     ]
-  },
-    environmentRouter
+  }
 ]
 
 // 动态路由，基于用户权限动态去加载

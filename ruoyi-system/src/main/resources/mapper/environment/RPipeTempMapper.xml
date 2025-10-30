@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.environment.mapper.RPipeTempMapper">
+    
+    <resultMap type="RPipeTemp" id="RPipeTempResult">
+        <result property="sectorId"    column="sector_id"    />
+        <result property="triangleNo"    column="triangle_no"    />
+        <result property="side"    column="side"    />
+        <result property="tempCelsius"    column="temp_celsius"    />
+        <result property="ts"    column="ts"    />
+    </resultMap>
+
+    <sql id="selectRPipeTempVo">
+        select sector_id, triangle_no, side, temp_celsius, ts from return_pipe_temp
+    </sql>
+
+    <select id="selectRPipeTempList" parameterType="RPipeTemp" resultMap="RPipeTempResult">
+        <include refid="selectRPipeTempVo"/>
+        <where>  
+            <if test="sectorId != null  and sectorId != ''"> and sector_id = #{sectorId}</if>
+            <if test="triangleNo != null  and triangleNo != ''"> and triangle_no = #{triangleNo}</if>
+            <if test="side != null  and side != ''"> and side = #{side}</if>
+            <if test="ts != null "> and ts like concat('%', #{ts}, '%')</if>
+        </where>
+    </select>
+    
+    <select id="selectRPipeTempBySectorId" parameterType="String" resultMap="RPipeTempResult">
+        <include refid="selectRPipeTempVo"/>
+        where sector_id = #{sectorId}
+    </select>
+
+    <insert id="insertRPipeTemp" parameterType="RPipeTemp">
+        insert into return_pipe_temp
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="sectorId != null">sector_id,</if>
+            <if test="triangleNo != null">triangle_no,</if>
+            <if test="side != null">side,</if>
+            <if test="tempCelsius != null">temp_celsius,</if>
+            <if test="ts != null">ts,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="sectorId != null">#{sectorId},</if>
+            <if test="triangleNo != null">#{triangleNo},</if>
+            <if test="side != null">#{side},</if>
+            <if test="tempCelsius != null">#{tempCelsius},</if>
+            <if test="ts != null">#{ts},</if>
+         </trim>
+    </insert>
+
+    <update id="updateRPipeTemp" parameterType="RPipeTemp">
+        update return_pipe_temp
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="triangleNo != null">triangle_no = #{triangleNo},</if>
+            <if test="side != null">side = #{side},</if>
+            <if test="tempCelsius != null">temp_celsius = #{tempCelsius},</if>
+            <if test="ts != null">ts = #{ts},</if>
+        </trim>
+        where sector_id = #{sectorId}
+    </update>
+
+    <delete id="deleteRPipeTempBySectorId" parameterType="String">
+        delete from return_pipe_temp where sector_id = #{sectorId}
+    </delete>
+
+    <delete id="deleteRPipeTempBySectorIds" parameterType="String">
+        delete from return_pipe_temp where sector_id in 
+        <foreach item="sectorId" collection="array" open="(" separator="," close=")">
+            #{sectorId}
+        </foreach>
+    </delete>
+</mapper>
