@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.environment.mapper.SVOpeningMapper">
+    
+    <resultMap type="SVOpening" id="SVOpeningResult">
+        <result property="sectorId"    column="sector_id"    />
+        <result property="currentOpening"    column="current_opening"    />
+        <result property="suggestedOpening"    column="suggested_opening"    />
+        <result property="ts"    column="ts"    />
+    </resultMap>
+
+    <sql id="selectSVOpeningVo">
+        select sector_id, current_opening, suggested_opening, ts from spray_valve_opening
+    </sql>
+
+    <select id="selectSVOpeningList" parameterType="SVOpening" resultMap="SVOpeningResult">
+        <include refid="selectSVOpeningVo"/>
+        <where>  
+            <if test="sectorId != null  and sectorId != ''"> and sector_id = #{sectorId}</if>
+            <if test="ts != null "> and ts like concat('%', #{ts}, '%')</if>
+        </where>
+    </select>
+    
+    <select id="selectSVOpeningBySectorId" parameterType="String" resultMap="SVOpeningResult">
+        <include refid="selectSVOpeningVo"/>
+        where sector_id = #{sectorId}
+    </select>
+
+    <insert id="insertSVOpening" parameterType="SVOpening">
+        insert into spray_valve_opening
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="sectorId != null">sector_id,</if>
+            <if test="currentOpening != null">current_opening,</if>
+            <if test="suggestedOpening != null">suggested_opening,</if>
+            <if test="ts != null">ts,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="sectorId != null">#{sectorId},</if>
+            <if test="currentOpening != null">#{currentOpening},</if>
+            <if test="suggestedOpening != null">#{suggestedOpening},</if>
+            <if test="ts != null">#{ts},</if>
+         </trim>
+    </insert>
+
+    <update id="updateSVOpening" parameterType="SVOpening">
+        update spray_valve_opening
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="currentOpening != null">current_opening = #{currentOpening},</if>
+            <if test="suggestedOpening != null">suggested_opening = #{suggestedOpening},</if>
+            <if test="ts != null">ts = #{ts},</if>
+        </trim>
+        where sector_id = #{sectorId}
+    </update>
+
+    <delete id="deleteSVOpeningBySectorId" parameterType="String">
+        delete from spray_valve_opening where sector_id = #{sectorId}
+    </delete>
+
+    <delete id="deleteSVOpeningBySectorIds" parameterType="String">
+        delete from spray_valve_opening where sector_id in 
+        <foreach item="sectorId" collection="array" open="(" separator="," close=")">
+            #{sectorId}
+        </foreach>
+    </delete>
+</mapper>

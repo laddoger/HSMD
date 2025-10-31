@@ -170,6 +170,9 @@ export default {
 
     // 右侧 12 扇区（后端）
     this.fetchAllSectorsWind()
+    if (this.refreshIntervalMs) {
+      this.sectorTimer = setInterval(this.fetchAllSectorsWind, this.refreshIntervalMs)
+    }
     // 如需周期刷新，从数据库取最新风速，可启用：
     // this.sectorTimer = setInterval(this.fetchAllSectorsWind, 3000)
   },

@@ -43,11 +43,19 @@ export default {
       loading: false,
       targetCount: 348,      // 需求：最新 348 条
       rawList: [],           // 原始数据列表
-      tableRows: []          // 转成“每行两条数据（四列）”的表格数据
+      tableRows: [],         // 转成“每行两条数据（四列）”的表格数据
+      refreshTimer: null,    // 定时器
     }
   },
   mounted() {
     this.fetchData()
+    this.refreshTimer = setInterval(this.fetchData, 10000)
+  },
+  beforeUnmount() {
+    if (this.refreshTimer) {
+      clearInterval(this.refreshTimer)
+      this.refreshTimer = null
+    }
   },
   methods: {
     // 兼容若依响应结构，抽 rows

@@ -1,9 +1,17 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px">
-      <el-form-item label="时间" prop="recordTime">
+      <el-form-item label="扇区号" prop="sectorId">
+        <el-input
+          v-model="queryParams.sectorId"
+          placeholder="请输入扇区号"
+          clearable
+          @keyup.enter="handleQuery"
+        />
+      </el-form-item>
+      <el-form-item label="时间" prop="ts">
         <el-date-picker clearable
-          v-model="queryParams.recordTime"
+          v-model="queryParams.ts"
           type="date"
           value-format="YYYY-MM-DD"
           placeholder="请选择时间">
@@ -22,7 +30,7 @@
           plain
           icon="Plus"
           @click="handleAdd"
-          v-hasPermi="['environment:Gparameters:add']"
+          v-hasPermi="['environment:opening:add']"
         >新增</el-button>
       </el-col>
       <el-col :span="1.5">
@@ -32,7 +40,7 @@
           icon="Edit"
           :disabled="single"
           @click="handleUpdate"
-          v-hasPermi="['environment:Gparameters:edit']"
+          v-hasPermi="['environment:opening:edit']"
         >修改</el-button>
       </el-col>
       <el-col :span="1.5">
@@ -42,7 +50,7 @@
           icon="Delete"
           :disabled="multiple"
           @click="handleDelete"
-          v-hasPermi="['environment:Gparameters:remove']"
+          v-hasPermi="['environment:opening:remove']"
         >删除</el-button>
       </el-col>
       <el-col :span="1.5">
@@ -51,35 +59,30 @@
           plain
           icon="Download"
           @click="handleExport"
-          v-hasPermi="['environment:Gparameters:export']"
+          v-hasPermi="['environment:opening:export']"
         >导出</el-button>
       </el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="GparametersList" @selection-change="handleSelectionChange">
+    <el-table v-loading="loading" :data="openingList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-<!--      <el-table-column label="主键ID" align="center" prop="id" />-->
-      <el-table-column label="机组负荷" align="center" prop="unitLoad" />
-      <el-table-column label="背压" align="center" prop="backPressure" />
-      <el-table-column label="出口温度" align="center" prop="outletTemperature" />
-      <el-table-column label="水泵频率" align="center" prop="pumpFrequency" />
-      <el-table-column label="水泵水压" align="center" prop="pumpPressure" />
-      <el-table-column label="泵电流" align="center" prop="pumpCurrent" />
-      <el-table-column label="出口流量" align="center" prop="outletFlow" />
-      <el-table-column label="时间" align="center" prop="recordTime" width="180">
+      <el-table-column label="扇区号" align="center" prop="sectorId" />
+      <el-table-column label="当前开度值" align="center" prop="currentOpening" />
+      <el-table-column label="建议开度值" align="center" prop="suggestedOpening" />
+      <el-table-column label="时间" align="center" prop="ts" width="180">
         <template #default="scope">
-          <span>{{ parseTime(scope.row.recordTime, '{y}-{m}-{d} {h}:{i}:{s}') }}</span>
+          <span>{{ parseTime(scope.row.ts, '{y}-{m}-{d} {h}:{i}:{s}') }}</span>
         </template>
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
-          <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['environment:Gparameters:edit']">修改</el-button>
-          <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['environment:Gparameters:remove']">删除</el-button>
+          <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['environment:opening:edit']">修改</el-button>
+          <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['environment:opening:remove']">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
-
+    
     <pagination
       v-show="total>0"
       :total="total"
@@ -88,33 +91,21 @@
       @pagination="getList"
     />
 
-    <!-- 添加或修改全局参数对话框 -->
+    <!-- 添加或修改喷雾阀门开度对话框 -->
     <el-dialog :title="title" v-model="open" width="500px" append-to-body>
-      <el-form ref="GparametersRef" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="机组负荷" prop="unitLoad">
-          <el-input v-model="form.unitLoad" placeholder="请输入机组负荷" />
+      <el-form ref="openingRef" :model="form" :rules="rules" label-width="80px">
+        <el-form-item label="扇区号" prop="sectorId">
+          <el-input v-model="form.sectorId" placeholder="请输入扇区号" />
         </el-form-item>
-        <el-form-item label="背压" prop="backPressure">
-          <el-input v-model="form.backPressure" placeholder="请输入背压" />
+        <el-form-item label="当前开度值" prop="currentOpening">
+          <el-input v-model="form.currentOpening" placeholder="请输入当前开度值" />
         </el-form-item>
-        <el-form-item label="出口温度" prop="outletTemperature">
-          <el-input v-model="form.outletTemperature" placeholder="请输入出口温度" />
+        <el-form-item label="建议开度值" prop="suggestedOpening">
+          <el-input v-model="form.suggestedOpening" placeholder="请输入建议开度值" />
         </el-form-item>
-        <el-form-item label="水泵频率" prop="pumpFrequency">
-          <el-input v-model="form.pumpFrequency" placeholder="请输入水泵频率" />
-        </el-form-item>
-        <el-form-item label="水泵水压" prop="pumpPressure">
-          <el-input v-model="form.pumpPressure" placeholder="请输入水泵水压" />
-        </el-form-item>
-        <el-form-item label="泵电流" prop="pumpCurrent">
-          <el-input v-model="form.pumpCurrent" placeholder="请输入泵电流" />
-        </el-form-item>
-        <el-form-item label="出口流量" prop="outletFlow">
-          <el-input v-model="form.outletFlow" placeholder="请输入出口流量" />
-        </el-form-item>
-        <el-form-item label="时间" prop="recordTime">
+        <el-form-item label="时间" prop="ts">
           <el-date-picker clearable
-            v-model="form.recordTime"
+            v-model="form.ts"
             type="date"
             value-format="YYYY-MM-DD"
             placeholder="请选择时间">
@@ -131,12 +122,12 @@
   </div>
 </template>
 
-<script setup name="Gparameters">
-import { listGparameters, getGparameters, delGparameters, addGparameters, updateGparameters } from "@/api/environment/Gparameters"
+<script setup name="Opening">
+import { listOpening, getOpening, delOpening, addOpening, updateOpening } from "@/api/environment/opening"
 
 const { proxy } = getCurrentInstance()
 
-const GparametersList = ref([])
+const openingList = ref([])
 const open = ref(false)
 const loading = ref(true)
 const showSearch = ref(true)
@@ -151,7 +142,8 @@ const data = reactive({
   queryParams: {
     pageNum: 1,
     pageSize: 10,
-    recordTime: null
+    sectorId: null,
+    ts: null
   },
   rules: {
   }
@@ -159,11 +151,11 @@ const data = reactive({
 
 const { queryParams, form, rules } = toRefs(data)
 
-/** 查询全局参数列表 */
+/** 查询喷雾阀门开度列表 */
 function getList() {
   loading.value = true
-  listGparameters(queryParams.value).then(response => {
-    GparametersList.value = response.rows
+  listOpening(queryParams.value).then(response => {
+    openingList.value = response.rows
     total.value = response.total
     loading.value = false
   })
@@ -178,17 +170,12 @@ function cancel() {
 // 表单重置
 function reset() {
   form.value = {
-    id: null,
-    unitLoad: null,
-    backPressure: null,
-    outletTemperature: null,
-    pumpFrequency: null,
-    pumpPressure: null,
-    pumpCurrent: null,
-    outletFlow: null,
-    recordTime: null
+    sectorId: null,
+    currentOpening: null,
+    suggestedOpening: null,
+    ts: null
   }
-  proxy.resetForm("GparametersRef")
+  proxy.resetForm("openingRef")
 }
 
 /** 搜索按钮操作 */
@@ -205,7 +192,7 @@ function resetQuery() {
 
 // 多选框选中数据
 function handleSelectionChange(selection) {
-  ids.value = selection.map(item => item.id)
+  ids.value = selection.map(item => item.sectorId)
   single.value = selection.length != 1
   multiple.value = !selection.length
 }
@@ -214,32 +201,32 @@ function handleSelectionChange(selection) {
 function handleAdd() {
   reset()
   open.value = true
-  title.value = "添加全局参数"
+  title.value = "添加喷雾阀门开度"
 }
 
 /** 修改按钮操作 */
 function handleUpdate(row) {
   reset()
-  const _id = row.id || ids.value
-  getGparameters(_id).then(response => {
+  const _sectorId = row.sectorId || ids.value
+  getOpening(_sectorId).then(response => {
     form.value = response.data
     open.value = true
-    title.value = "修改全局参数"
+    title.value = "修改喷雾阀门开度"
   })
 }
 
 /** 提交按钮 */
 function submitForm() {
-  proxy.$refs["GparametersRef"].validate(valid => {
+  proxy.$refs["openingRef"].validate(valid => {
     if (valid) {
-      if (form.value.id != null) {
-        updateGparameters(form.value).then(response => {
+      if (form.value.sectorId != null) {
+        updateOpening(form.value).then(response => {
           proxy.$modal.msgSuccess("修改成功")
           open.value = false
           getList()
         })
       } else {
-        addGparameters(form.value).then(response => {
+        addOpening(form.value).then(response => {
           proxy.$modal.msgSuccess("新增成功")
           open.value = false
           getList()
@@ -251,9 +238,9 @@ function submitForm() {
 
 /** 删除按钮操作 */
 function handleDelete(row) {
-  const _ids = row.id || ids.value
-  proxy.$modal.confirm('是否确认删除全局参数编号为"' + _ids + '"的数据项？').then(function() {
-    return delGparameters(_ids)
+  const _sectorIds = row.sectorId || ids.value
+  proxy.$modal.confirm('是否确认删除喷雾阀门开度编号为"' + _sectorIds + '"的数据项？').then(function() {
+    return delOpening(_sectorIds)
   }).then(() => {
     getList()
     proxy.$modal.msgSuccess("删除成功")
@@ -262,9 +249,9 @@ function handleDelete(row) {
 
 /** 导出按钮操作 */
 function handleExport() {
-  proxy.download('environment/Gparameters/export', {
+  proxy.download('environment/opening/export', {
     ...queryParams.value
-  }, `Gparameters_${new Date().getTime()}.xlsx`)
+  }, `opening_${new Date().getTime()}.xlsx`)
 }
 
 getList()
