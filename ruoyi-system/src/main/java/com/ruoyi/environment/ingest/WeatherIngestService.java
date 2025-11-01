@@ -185,13 +185,23 @@ public class WeatherIngestService {
 
     private boolean notBlank(String s) { return s != null && !s.trim().isEmpty(); }
 
+    /**
+     * 将 JSON 中的 triangle_5 / triangle_10 / triangle_14(或15) 映射为 1/2/3
+     */
     private Integer parseTriangleKey(String key) {
         if (key == null) return null;
-        // match "triangle_5" -> 5
         int idx = key.indexOf('_');
         if (idx < 0 || idx == key.length() - 1) return null;
-        try { return Integer.parseInt(key.substring(idx + 1)); }
-        catch (NumberFormatException e) { return null; }
+        String suffix = key.substring(idx + 1);
+        switch (suffix) {
+            case "5":  return 1;
+            case "10": return 2;
+            case "14":
+            case "15": return 3;
+            default:
+                log.warn("[weather] unknown triangle suffix: {}", suffix);
+                return null;
+        }
     }
 
     /** 支持 Quartz 传入路径的便捷包装 */

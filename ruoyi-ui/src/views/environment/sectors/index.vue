@@ -25,10 +25,10 @@
           <div class="card-title">全局环境风向</div>
           <div class="card-value">{{ global5.windDirection }}</div>
         </div>
-        <div class="param-card">
-          <div class="card-title">塔外环境温度</div>
-          <div class="card-value">{{ global5.towerOuterTemp }}</div>
-        </div>
+<!--        <div class="param-card">-->
+<!--          <div class="card-title">塔外环境温度</div>-->
+<!--          <div class="card-value">{{ global5.towerOuterTemp }}</div>-->
+<!--        </div>-->
       </div>
 
       <!-- 右侧环形 SVG 区域（扇区数据来自后端） -->
