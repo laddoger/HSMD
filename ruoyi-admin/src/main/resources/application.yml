@@ -134,3 +134,13 @@ xss:
   excludes: /system/notice
   # 匹配链接
   urlPatterns: /system/*,/monitor/*,/tool/*
+
+#ingest:
+#  temps:
+#    path: "/Users/wang/Documents/data/temperature_data.json"   # 温度JSON文件的绝对路径
+#    cron: "0/5 * * * * ?"                    # 每5秒跑一次，可改
+#    charset: "UTF-8"
+#    stableMillis: 300                        # 文件“稳定窗口”，防半写
+#    # 温度物理范围（小于min或大于max将丢弃）
+#    minCelsius: -50
+#    maxCelsius: 150

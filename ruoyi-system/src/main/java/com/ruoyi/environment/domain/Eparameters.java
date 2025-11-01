@@ -29,9 +29,9 @@ public class Eparameters extends BaseEntity
     @Excel(name = "环境风速，单位m/s")
     private Long envWindSpeed;
 
-    /** 环境风向，单位N/S */
-    @Excel(name = "环境风向，单位N/S")
-    private String envWindDir;
+    /** 环境风向，单位°/10 */
+    @Excel(name = "环境风向，单位°/10")
+    private Integer envWindDir;
 
     /** 塔外环境温度，单位℃ */
     @Excel(name = "塔外环境温度，单位℃")
@@ -42,42 +42,42 @@ public class Eparameters extends BaseEntity
     @Excel(name = "时间", width = 30, dateFormat = "yyyy-MM-dd HH:mm:ss")
     private Date ts;
 
-    public void setGlobalEnvTemp(Long globalEnvTemp) 
+    public void setGlobalEnvTemp(Long globalEnvTemp)
     {
         this.globalEnvTemp = globalEnvTemp;
     }
 
-    public Long getGlobalEnvTemp() 
+    public Long getGlobalEnvTemp()
     {
         return globalEnvTemp;
     }
 
-    public void setEnvHumidity(Long envHumidity) 
+    public void setEnvHumidity(Long envHumidity)
     {
         this.envHumidity = envHumidity;
     }
 
-    public Long getEnvHumidity() 
+    public Long getEnvHumidity()
     {
         return envHumidity;
     }
 
-    public void setEnvWindSpeed(Long envWindSpeed) 
+    public void setEnvWindSpeed(Long envWindSpeed)
     {
         this.envWindSpeed = envWindSpeed;
     }
 
-    public Long getEnvWindSpeed() 
+    public Long getEnvWindSpeed()
     {
         return envWindSpeed;
     }
 
-    public void setEnvWindDir(String envWindDir) 
+    public void setEnvWindDir(Integer envWindDir)
     {
         this.envWindDir = envWindDir;
     }
 
-    public String getEnvWindDir() 
+    public Integer getEnvWindDir()
     {
         return envWindDir;
     }

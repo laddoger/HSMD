@@ -1,73 +1,106 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper
-PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ruoyi.environment.mapper.RPipeTempMapper">
-    
+
+    <!-- 结果映射 -->
     <resultMap type="RPipeTemp" id="RPipeTempResult">
-        <result property="sectorId"    column="sector_id"    />
-        <result property="triangleNo"    column="triangle_no"    />
-        <result property="side"    column="side"    />
-        <result property="tempCelsius"    column="temp_celsius"    />
-        <result property="ts"    column="ts"    />
+        <result property="sectorId" column="sector_id"/>
+        <result property="triangleNo" column="triangle_no"/>
+        <result property="side" column="side"/>
+        <result property="tempCelsius" column="temp_celsius"/>
+        <result property="ts" column="ts"/>
     </resultMap>
 
+    <!-- 基础字段 SQL 片段 -->
     <sql id="selectRPipeTempVo">
-        select sector_id, triangle_no, side, temp_celsius, ts from return_pipe_temp
+        SELECT sector_id, triangle_no, side, temp_celsius, ts FROM return_pipe_temp
     </sql>
 
+    <!-- 查询列表（原生） -->
     <select id="selectRPipeTempList" parameterType="RPipeTemp" resultMap="RPipeTempResult">
         <include refid="selectRPipeTempVo"/>
-        <where>  
-            <if test="sectorId != null  and sectorId != ''"> and sector_id = #{sectorId}</if>
-            <if test="triangleNo != null  and triangleNo != ''"> and triangle_no = #{triangleNo}</if>
-            <if test="side != null  and side != ''"> and side = #{side}</if>
-            <if test="ts != null "> and ts like concat('%', #{ts}, '%')</if>
+        <where>
+            <if test="sectorId != null and sectorId != ''">AND sector_id = #{sectorId}</if>
+            <if test="triangleNo != null and triangleNo != ''">AND triangle_no = #{triangleNo}</if>
+            <if test="side != null and side != ''">AND side = #{side}</if>
+            <if test="ts != null">AND ts LIKE concat('%', #{ts}, '%')</if>
         </where>
     </select>
-    
+
+    <!-- 按 sectorId 查询（保留旧功能） -->
     <select id="selectRPipeTempBySectorId" parameterType="String" resultMap="RPipeTempResult">
         <include refid="selectRPipeTempVo"/>
-        where sector_id = #{sectorId}
+        WHERE sector_id = #{sectorId}
     </select>
 
+    <!-- 新增：按复合键查询 -->
+    <select id="selectRPipeTempByKey" parameterType="map" resultMap="RPipeTempResult">
+        <include refid="selectRPipeTempVo"/>
+        WHERE sector_id = #{sectorId}
+        AND triangle_no = #{triangleNo}
+        AND side = #{side}
+        AND ts = #{ts}
+    </select>
+
+    <!-- 新增：单条 UPSERT（若存在则更新温度） -->
     <insert id="insertRPipeTemp" parameterType="RPipeTemp">
-        insert into return_pipe_temp
-        <trim prefix="(" suffix=")" suffixOverrides=",">
-            <if test="sectorId != null">sector_id,</if>
-            <if test="triangleNo != null">triangle_no,</if>
-            <if test="side != null">side,</if>
-            <if test="tempCelsius != null">temp_celsius,</if>
-            <if test="ts != null">ts,</if>
-         </trim>
-        <trim prefix="values (" suffix=")" suffixOverrides=",">
-            <if test="sectorId != null">#{sectorId},</if>
-            <if test="triangleNo != null">#{triangleNo},</if>
-            <if test="side != null">#{side},</if>
-            <if test="tempCelsius != null">#{tempCelsius},</if>
-            <if test="ts != null">#{ts},</if>
-         </trim>
+        INSERT INTO return_pipe_temp (sector_id, triangle_no, side, temp_celsius, ts)
+        VALUES (#{sectorId}, #{triangleNo}, #{side}, #{tempCelsius}, #{ts})
+        ON DUPLICATE KEY UPDATE
+            temp_celsius = VALUES(temp_celsius)
     </insert>
 
+    <!-- 新增：批量 UPSERT -->
+    <insert id="batchUpsertRPipeTemp" parameterType="java.util.List">
+        INSERT INTO return_pipe_temp (sector_id, triangle_no, side, temp_celsius, ts)
+        VALUES
+        <foreach collection="list" item="e" separator=",">
+            (#{e.sectorId}, #{e.triangleNo}, #{e.side}, #{e.tempCelsius}, #{e.ts})
+        </foreach>
+        ON DUPLICATE KEY UPDATE
+        temp_celsius = VALUES(temp_celsius)
+    </insert>
+
+    <!-- 修改：只更新温度，按复合键匹配 -->
     <update id="updateRPipeTemp" parameterType="RPipeTemp">
-        update return_pipe_temp
-        <trim prefix="SET" suffixOverrides=",">
-            <if test="triangleNo != null">triangle_no = #{triangleNo},</if>
-            <if test="side != null">side = #{side},</if>
-            <if test="tempCelsius != null">temp_celsius = #{tempCelsius},</if>
-            <if test="ts != null">ts = #{ts},</if>
-        </trim>
-        where sector_id = #{sectorId}
+        UPDATE return_pipe_temp
+        SET temp_celsius = #{tempCelsius}
+        WHERE sector_id = #{sectorId}
+          AND triangle_no = #{triangleNo}
+          AND side = #{side}
+          AND ts = #{ts}
     </update>
 
+    <!-- 新增：按复合键删除 -->
+    <delete id="deleteRPipeTempByKey" parameterType="map">
+        DELETE FROM return_pipe_temp
+        WHERE sector_id = #{sectorId}
+          AND triangle_no = #{triangleNo}
+          AND side = #{side}
+          AND ts = #{ts}
+    </delete>
+
+    <!-- 新增：批量删除（按复合键列表） -->
+    <delete id="deleteRPipeTempByKeys" parameterType="java.util.List">
+        DELETE FROM return_pipe_temp
+        WHERE (sector_id, triangle_no, side, ts) IN
+        <foreach collection="list" item="e" open="(" separator="),(" close=")">
+            #{e.sectorId}, #{e.triangleNo}, #{e.side}, #{e.ts}
+        </foreach>
+    </delete>
+
+    <!-- 保留：按 sectorId 删除（旧接口兼容） -->
     <delete id="deleteRPipeTempBySectorId" parameterType="String">
-        delete from return_pipe_temp where sector_id = #{sectorId}
+        DELETE FROM return_pipe_temp WHERE sector_id = #{sectorId}
     </delete>
 
     <delete id="deleteRPipeTempBySectorIds" parameterType="String">
-        delete from return_pipe_temp where sector_id in 
+        DELETE FROM return_pipe_temp WHERE sector_id IN
         <foreach item="sectorId" collection="array" open="(" separator="," close=")">
             #{sectorId}
         </foreach>
     </delete>
+
 </mapper>

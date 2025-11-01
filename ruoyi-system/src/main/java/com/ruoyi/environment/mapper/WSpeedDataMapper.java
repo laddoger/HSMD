@@ -58,4 +58,10 @@ public interface WSpeedDataMapper
      * @return 结果
      */
     public int deleteWSpeedDataByIds(Long[] ids);
+    /**
+     * 批量插入风速数据（用于采集入库）
+     * @param list 风速数据集合
+     * @return 插入行数
+     */
+    int batchInsert(java.util.List<WSpeedData> list);
 }

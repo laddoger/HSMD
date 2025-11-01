@@ -13,9 +13,9 @@ spring:
             slave:
                 # 从数据源开关/默认关闭
                 enabled: false
-                url: 
-                username: 
-                password: 
+                url:
+                username:
+                password:
             # 初始连接数
             initialSize: 5
             # 最小连接池数量
@@ -39,7 +39,7 @@ spring:
             testWhileIdle: true
             testOnBorrow: false
             testOnReturn: false
-            webStatFilter: 
+            webStatFilter:
                 enabled: true
             statViewServlet:
                 enabled: true
@@ -59,3 +59,18 @@ spring:
                 wall:
                     config:
                         multi-statement-allow: true
+
+# 采集入库配置
+ingest:
+  temps:
+    path: "/Users/wang/Documents/data/temperature_data.json"  # 温度 JSON 文件路径
+    cron: "0/5 * * * * ?"          # 如使用 Quartz，可忽略；这里保留原注释
+    charset: "UTF-8"
+    stableMillis: 300               # 文件“稳定窗口”，防止半写
+    minCelsius: -50
+    maxCelsius: 150
+
+  weather:
+    path: "/Users/wang/Documents/data/weather_data.json"      # 天气 JSON 文件路径（请改成你的真实路径）
+    charset: "UTF-8"
+    stableMillis: 1500

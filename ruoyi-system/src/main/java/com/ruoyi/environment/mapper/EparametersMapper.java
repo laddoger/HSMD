@@ -1,61 +1,65 @@
 package com.ruoyi.environment.mapper;
 
-import java.util.List;
 import com.ruoyi.environment.domain.Eparameters;
+import org.apache.ibatis.annotations.Mapper;
+
+import java.util.List;
 
 /**
  * 环境参数Mapper接口
- * 
- * @author Wang
- * @date 2025-10-29
+ *
+ * 保持与现有前端及Service兼容：
+ * - 新增方法名仍为 insertEparameters
+ * - 其他查询/更新/删除方法不变
  */
-public interface EparametersMapper 
+@Mapper
+public interface EparametersMapper
 {
     /**
      * 查询环境参数
-     * 
+     *
      * @param globalEnvTemp 环境参数主键
      * @return 环境参数
      */
-    public Eparameters selectEparametersByGlobalEnvTemp(Long globalEnvTemp);
+    Eparameters selectEparametersByGlobalEnvTemp(Long globalEnvTemp);
 
     /**
      * 查询环境参数列表
-     * 
+     *
      * @param eparameters 环境参数
      * @return 环境参数集合
      */
-    public List<Eparameters> selectEparametersList(Eparameters eparameters);
+    List<Eparameters> selectEparametersList(Eparameters eparameters);
 
     /**
      * 新增环境参数
-     * 
+     *
      * @param eparameters 环境参数
      * @return 结果
      */
-    public int insertEparameters(Eparameters eparameters);
+    int insertEparameters(Eparameters eparameters);
 
     /**
      * 修改环境参数
-     * 
+     *
      * @param eparameters 环境参数
      * @return 结果
      */
-    public int updateEparameters(Eparameters eparameters);
+    int updateEparameters(Eparameters eparameters);
 
     /**
      * 删除环境参数
-     * 
+     *
      * @param globalEnvTemp 环境参数主键
      * @return 结果
      */
-    public int deleteEparametersByGlobalEnvTemp(Long globalEnvTemp);
+    int deleteEparametersByGlobalEnvTemp(Long globalEnvTemp);
 
     /**
      * 批量删除环境参数
-     * 
+     *
      * @param globalEnvTemps 需要删除的数据主键集合
      * @return 结果
      */
-    public int deleteEparametersByGlobalEnvTemps(Long[] globalEnvTemps);
+    int deleteEparametersByGlobalEnvTemps(Long[] globalEnvTemps);
 }

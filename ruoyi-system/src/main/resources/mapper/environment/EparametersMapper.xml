@@ -1,74 +1,87 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper
-PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ruoyi.environment.mapper.EparametersMapper">
-    
-    <resultMap type="Eparameters" id="EparametersResult">
-        <result property="globalEnvTemp"    column="global_env_temp"    />
-        <result property="envHumidity"    column="env_humidity"    />
-        <result property="envWindSpeed"    column="env_wind_speed"    />
-        <result property="envWindDir"    column="env_wind_dir"    />
-        <result property="towerEnvTemp"    column="tower_env_temp"    />
-        <result property="ts"    column="ts"    />
+
+    <!-- 结果映射：Eparameters -->
+    <resultMap id="EparametersResult" type="Eparameters">
+        <result property="globalEnvTemp" column="global_env_temp"/>
+        <result property="envHumidity"   column="env_humidity"/>
+        <result property="envWindSpeed"  column="env_wind_speed"/>
+        <result property="envWindDir"    column="env_wind_dir"/>
+        <result property="towerEnvTemp"  column="tower_env_temp"/>
+        <result property="ts"            column="ts"/>
     </resultMap>
 
+    <!-- 通用列片段 -->
     <sql id="selectEparametersVo">
-        select global_env_temp, env_humidity, env_wind_speed, env_wind_dir, tower_env_temp, ts from Eparameters
+        select
+            global_env_temp, env_humidity, env_wind_speed, env_wind_dir, tower_env_temp, ts
+        from Eparameters
     </sql>
 
+    <!-- 列表查询 -->
     <select id="selectEparametersList" parameterType="Eparameters" resultMap="EparametersResult">
         <include refid="selectEparametersVo"/>
-        <where>  
-            <if test="ts != null "> and ts like concat('%', #{ts}, '%')</if>
+        <where>
+            <!-- 按时间模糊查询（保持与现有前端一致） -->
+            <if test="ts != null"> and ts like concat('%', #{ts}, '%')</if>
         </where>
     </select>
-    
+
+    <!-- 主键（这里沿用 global_env_temp 作为定位条件，保持生成器风格） -->
     <select id="selectEparametersByGlobalEnvTemp" parameterType="Long" resultMap="EparametersResult">
         <include refid="selectEparametersVo"/>
         where global_env_temp = #{globalEnvTemp}
     </select>
 
+    <!-- 新增（保持可选列写法，不影响旧调用方） -->
     <insert id="insertEparameters" parameterType="Eparameters">
         insert into Eparameters
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="globalEnvTemp != null">global_env_temp,</if>
-            <if test="envHumidity != null">env_humidity,</if>
-            <if test="envWindSpeed != null">env_wind_speed,</if>
-            <if test="envWindDir != null">env_wind_dir,</if>
-            <if test="towerEnvTemp != null">tower_env_temp,</if>
-            <if test="ts != null">ts,</if>
-         </trim>
+            <if test="envHumidity   != null">env_humidity,</if>
+            <if test="envWindSpeed  != null">env_wind_speed,</if>
+            <if test="envWindDir    != null">env_wind_dir,</if>
+            <if test="towerEnvTemp  != null">tower_env_temp,</if>
+            <if test="ts            != null">ts,</if>
+        </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="globalEnvTemp != null">#{globalEnvTemp},</if>
-            <if test="envHumidity != null">#{envHumidity},</if>
-            <if test="envWindSpeed != null">#{envWindSpeed},</if>
-            <if test="envWindDir != null">#{envWindDir},</if>
-            <if test="towerEnvTemp != null">#{towerEnvTemp},</if>
-            <if test="ts != null">#{ts},</if>
-         </trim>
+            <if test="envHumidity   != null">#{envHumidity},</if>
+            <if test="envWindSpeed  != null">#{envWindSpeed},</if>
+            <if test="envWindDir    != null">#{envWindDir},</if>
+            <if test="towerEnvTemp  != null">#{towerEnvTemp},</if>
+            <if test="ts            != null">#{ts},</if>
+        </trim>
     </insert>
 
+    <!-- 更新 -->
     <update id="updateEparameters" parameterType="Eparameters">
         update Eparameters
         <trim prefix="SET" suffixOverrides=",">
-            <if test="envHumidity != null">env_humidity = #{envHumidity},</if>
-            <if test="envWindSpeed != null">env_wind_speed = #{envWindSpeed},</if>
-            <if test="envWindDir != null">env_wind_dir = #{envWindDir},</if>
-            <if test="towerEnvTemp != null">tower_env_temp = #{towerEnvTemp},</if>
-            <if test="ts != null">ts = #{ts},</if>
+            <if test="envHumidity   != null">env_humidity  = #{envHumidity},</if>
+            <if test="envWindSpeed  != null">env_wind_speed = #{envWindSpeed},</if>
+            <if test="envWindDir    != null">env_wind_dir   = #{envWindDir},</if>
+            <if test="towerEnvTemp  != null">tower_env_temp = #{towerEnvTemp},</if>
+            <if test="ts            != null">ts             = #{ts},</if>
         </trim>
         where global_env_temp = #{globalEnvTemp}
     </update>
 
+    <!-- 删除（单条） -->
     <delete id="deleteEparametersByGlobalEnvTemp" parameterType="Long">
         delete from Eparameters where global_env_temp = #{globalEnvTemp}
     </delete>
 
+    <!-- 删除（批量） -->
     <delete id="deleteEparametersByGlobalEnvTemps" parameterType="String">
-        delete from Eparameters where global_env_temp in 
-        <foreach item="globalEnvTemp" collection="array" open="(" separator="," close=")">
+        delete from Eparameters
+        where global_env_temp in
+        <foreach collection="array" item="globalEnvTemp" open="(" separator="," close=")">
             #{globalEnvTemp}
         </foreach>
     </delete>
+
 </mapper>

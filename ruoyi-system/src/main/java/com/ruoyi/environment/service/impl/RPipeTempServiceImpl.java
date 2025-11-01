@@ -90,4 +90,64 @@ public class RPipeTempServiceImpl implements IRPipeTempService
     {
         return rPipeTempMapper.deleteRPipeTempBySectorId(sectorId);
     }
+    /**
+     * 通过复合主键查询
+     *
+     * @param sectorId 扇区号
+     * @param triangleNo 三角号
+     * @param side 管路方向 L/R
+     * @param ts 时间戳
+     * @return 回水管温度
+     */
+    @Override
+    public RPipeTemp selectRPipeTempByKey(String sectorId, Integer triangleNo, String side, java.sql.Timestamp ts)
+    {
+        return rPipeTempMapper.selectRPipeTempByKey(sectorId, triangleNo, side, ts);
+    }
+
+    /**
+     * 批量UPSERT回水管温度
+     * 若 (sector_id, triangle_no, side, ts) 已存在则更新温度，否则插入。
+     *
+     * @param list 回水管温度集合
+     * @return 结果
+     */
+    @Override
+    public int batchUpsertRPipeTemp(java.util.List<RPipeTemp> list)
+    {
+        if (list == null || list.isEmpty()) {
+            return 0;
+        }
+        return rPipeTempMapper.batchUpsertRPipeTemp(list);
+    }
+
+    /**
+     * 通过复合主键删除单条记录
+     *
+     * @param sectorId 扇区号
+     * @param triangleNo 三角号
+     * @param side 管路方向 L/R
+     * @param ts 时间戳
+     * @return 删除结果
+     */
+    @Override
+    public int deleteRPipeTempByKey(String sectorId, Integer triangleNo, String side, java.sql.Timestamp ts)
+    {
+        return rPipeTempMapper.deleteRPipeTempByKey(sectorId, triangleNo, side, ts);
+    }
+
+    /**
+     * 批量通过复合主键删除记录
+     *
+     * @param list 回水管温度集合（仅需4个键字段）
+     * @return 删除结果
+     */
+    @Override
+    public int deleteRPipeTempByKeys(java.util.List<RPipeTemp> list)
+    {
+        if (list == null || list.isEmpty()) {
+            return 0;
+        }
+        return rPipeTempMapper.deleteRPipeTempByKeys(list);
+    }
 }

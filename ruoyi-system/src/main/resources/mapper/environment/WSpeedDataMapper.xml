@@ -71,4 +71,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             #{id}
         </foreach>
     </delete>
+    <!-- 批量插入：采集入库使用，对应接口 WSpeedDataMapper#batchInsert -->
+    <insert id="batchInsert" parameterType="java.util.List">
+        INSERT INTO wind_speed_data
+          (sector, sensor, wind_speed, wind_direction, record_time)
+        VALUES
+        <foreach collection="list" item="e" separator=",">
+          (#{e.sector}, #{e.sensor}, #{e.windSpeed}, #{e.windDirection}, #{e.recordTime})
+        </foreach>
+    </insert>
 </mapper>

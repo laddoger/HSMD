@@ -23,11 +23,11 @@ public class WSpeedData extends BaseEntity
 
     /** 扇区号 */
     @Excel(name = "扇区号")
-    private Long sector;
+    private Integer sector;
 
     /** 传感器号 */
     @Excel(name = "传感器号")
-    private Long sensor;
+    private Integer sensor;
 
     /** 风速 (m/s) */
     @Excel(name = "风速 (m/s)")
@@ -42,32 +42,32 @@ public class WSpeedData extends BaseEntity
     @Excel(name = "记录时间", width = 30, dateFormat = "yyyy-MM-dd HH:mm:ss")
     private Date recordTime;
 
-    public void setId(Long id) 
+    public void setId(Long id)
     {
         this.id = id;
     }
 
-    public Long getId() 
+    public Long getId()
     {
         return id;
     }
 
-    public void setSector(Long sector) 
+    public void setSector(Integer sector)
     {
         this.sector = sector;
     }
 
-    public Long getSector() 
+    public Integer getSector()
     {
         return sector;
     }
 
-    public void setSensor(Long sensor) 
+    public void setSensor(Integer sensor)
     {
         this.sensor = sensor;
     }
 
-    public Long getSensor() 
+    public Integer getSensor()
     {
         return sensor;
     }
