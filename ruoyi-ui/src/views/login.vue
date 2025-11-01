@@ -126,7 +126,7 @@ function handleLogin() {
           }
           return acc
         }, {})
-        router.push({ path: redirect.value || "/", query: otherQueryParams })
+        router.push({ path: redirect.value || "/environment/sectors", query: otherQueryParams })
       }).catch(() => {
         loading.value = false
         // 重新获取验证码

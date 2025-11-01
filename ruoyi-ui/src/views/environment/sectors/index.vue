@@ -2,7 +2,7 @@
   <div class="sectors-page">
     <div class="header">
       <h2>间冷塔 — 扇区视图</h2>
-      <p class="subtitle">左侧为 5 项全局参数（来自后端 Eparameters）；右侧为 12 扇区环（已接后端）。每个扇区内显示「平均风速 / 风向(传感器1)」，点击查看 3 个传感器的风速与风向详情。</p>
+      <p class="subtitle">左侧为 5 项全局参数；右侧为 12 扇区环。每个扇区内显示「平均风速」，点击查看 3 个传感器的风速详情。</p>
     </div>
 
     <!-- 主布局：左侧参数栏 + 右侧环形扇区 -->
@@ -23,7 +23,7 @@
         </div>
         <div class="param-card">
           <div class="card-title">全局环境风向</div>
-          <div class="card-value">{{ global5.windDirection }}</div>
+          <div class="card-value">{{ global5.windDirection }}°</div>
         </div>
 <!--        <div class="param-card">-->
 <!--          <div class="card-title">塔外环境温度</div>-->
@@ -55,7 +55,7 @@
                 class="sector-path"
                 @click="onSectorClick(i)"
             />
-            <!-- 扇区内展示：平均风速 + 风向(传感器1) -->
+            <!-- 扇区内展示：平均风速 -->
             <text
                 :x="labelPos(i - 1).x"
                 :y="labelPos(i - 1).y - 8"
@@ -65,16 +65,6 @@
                 pointer-events="none"
             >
               {{ avgSpeedText(i) }}
-            </text>
-            <text
-                :x="labelPos(i - 1).x"
-                :y="labelPos(i - 1).y + 12"
-                class="sector-line direction"
-                text-anchor="middle"
-                alignment-baseline="middle"
-                pointer-events="none"
-            >
-              {{ dirSensor1Text(i) }}
             </text>
             <!-- 扇区编号：沿内环显示 -->
             <text
@@ -92,7 +82,7 @@
       </div>
     </div>
 
-    <!-- 扇区详情弹窗：显示三个传感器风速与风向 -->
+    <!-- 扇区详情弹窗：显示三个传感器风速 -->
     <el-dialog
         :title="modalTitle"
         v-model="modalVisible"
@@ -111,7 +101,6 @@
         <el-table :data="modalDetail.rows" border size="small">
           <el-table-column prop="sensorId" label="传感器" width="90" align="center"/>
           <el-table-column prop="speed" label="风速 (m/s)" width="120" align="center"/>
-          <el-table-column prop="direction" label="风向" align="center"/>
         </el-table>
       </div>
 
@@ -153,7 +142,7 @@ export default {
       refreshTimer: null,
       refreshIntervalMs: 5000, // 刷新周期（可调，设为 null/0 可关闭）
 
-      // 扇区风速风向数据缓存：{ [sectorId]: { speeds: [s1,s2,s3], directions: [d1,d2,d3] } }
+      // 扇区风速数据缓存：{ [sectorId]: { speeds: [s1,s2,s3] } }
       sectorWindMap: {}
     }
   },
@@ -221,14 +210,14 @@ export default {
       }
     },
 
-    /* ------------------------- 扇区风速/风向：后端 ------------------------- */
+    /* ------------------------- 扇区风速：后端 ------------------------- */
     async fetchAllSectorsWind() {
       try {
         if (this.useMockSectors) {
           // （若临时调试可回退到 mock，此分支保留占位）
           const map = {}
           for (let i = 1; i <= this.totalSectors; i++) {
-            map[i] = { speeds: [2.0, 3.0, 4.0], directions: ['NE', 'E', 'SE'] }
+            map[i] = { speeds: [2.0, 3.0, 4.0] }
           }
           this.sectorWindMap = map
         } else {
@@ -250,15 +239,10 @@ export default {
       const avg = valid.reduce((a,b)=>a+b,0) / valid.length
       return `${avg.toFixed(1)} m/s`
     },
-    dirSensor1Text(sectorId) {
-      const d = this.sectorWindMap[sectorId]
-      if (!d || !Array.isArray(d.directions) || d.directions.length < 1) return '—'
-      return d.directions[0] || '—' // 传感器1的风向
-    },
 
     /* ------------------------- 扇区点击 & 详情 ------------------------- */
     async onSectorClick(id) {
-      this.modalTitle = `扇区 ${id} — 风速/风向详情`
+      this.modalTitle = `扇区 ${id} — 风速详情`
       this.modalVisible = true
       this.loading = true
 
@@ -271,11 +255,9 @@ export default {
           this.$set(this.sectorWindMap, id, d)
         }
         const speeds = d.speeds || []
-        const directions = d.directions || []
         const rows = [1,2,3].map(n => ({
           sensorId: `#${n}`,
-          speed: (typeof speeds[n-1] === 'number' && !isNaN(speeds[n-1])) ? speeds[n-1] : '--',
-          direction: directions[n-1] || '--'
+          speed: (typeof speeds[n-1] === 'number' && !isNaN(speeds[n-1])) ? speeds[n-1] : '--'
         }))
         const validSpeeds = speeds.filter(v => typeof v === 'number' && !isNaN(v))
         const avg = validSpeeds.length ? (validSpeeds.reduce((a,b)=>a+b,0) / validSpeeds.length).toFixed(2) : '--'
@@ -285,7 +267,7 @@ export default {
         this.modalDetail = {
           sectorId: id,
           avgSpeed: '--',
-          rows: [1,2,3].map(n => ({ sensorId:`#${n}`, speed:'--', direction:'--' }))
+          rows: [1,2,3].map(n => ({ sensorId:`#${n}`, speed:'--' }))
         }
       } finally {
         this.loading = false
@@ -432,14 +414,13 @@ export default {
 .sector-path { cursor: pointer; }
 .sector-path:hover { filter: brightness(0.96); }
 
-/* 两行文本：平均风速 + 风向(传感器1) */
+/* 文本：平均风速 */
 .sector-line {
   font-weight: 600;
   fill: #2f6fb2;
   pointer-events: none;
 }
 .sector-line.speed { font-size: 14px; }
-.sector-line.direction { font-size: 12px; }
 
 /* 弹窗 loading */
 .modal-loading { text-align:center; padding:24px; color:#666; }

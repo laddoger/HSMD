@@ -1,26 +1,87 @@
 <template>
   <div class="page">
-    <!-- 顶部：全局参数，仅三项 -->
-    <div class="global-panel">
-      <div class="kpi">
-        <div class="kpi-label">机组负荷</div>
-        <div class="kpi-value">
-          {{ global.unitLoad ?? '--' }}
-          <span class="unit">MW</span>
+    <!-- 顶部：全局参数，左侧三项，右侧三项 -->
+    <div class="top-bar">
+      <!-- 左侧：三张卡片（可编辑的两项 + 收益） -->
+      <div class="left-kpi">
+        <div class="kpi">
+          <div class="kpi-label">实时煤价</div>
+          <div class="kpi-value">
+            <template v-if="editMode">
+              <el-input v-model.number="localInputs.coalPrice" class="input" size="small" />
+              <span class="unit">元/t</span>
+              <el-button
+                size="small"
+                type="text"
+                class="edit-btn"
+                @click="toggleEdit"
+              >完成</el-button>
+            </template>
+            <template v-else>
+              {{ localInputs.coalPrice ?? '--' }} <span class="unit">元/t</span>
+              <el-button
+                size="small"
+                type="text"
+                class="edit-btn"
+                @click="toggleEdit"
+              >编辑</el-button>
+            </template>
+          </div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">碳排放价格</div>
+          <div class="kpi-value">
+            <template v-if="editMode">
+              <el-input v-model.number="localInputs.carbonPrice" class="input" size="small" />
+              <span class="unit">元/t</span>
+              <el-button
+                size="small"
+                type="text"
+                class="edit-btn"
+                @click="toggleEdit"
+              >完成</el-button>
+            </template>
+            <template v-else>
+              {{ localInputs.carbonPrice ?? '--' }} <span class="unit">元/t</span>
+              <el-button
+                size="small"
+                type="text"
+                class="edit-btn"
+                @click="toggleEdit"
+              >编辑</el-button>
+            </template>
+          </div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">寻优算法经济收益</div>
+          <div class="kpi-value">
+            {{ localInputs.optimizationBenefit }} <span class="unit">万元</span>
+          </div>
         </div>
       </div>
-      <div class="kpi">
-        <div class="kpi-label">背压</div>
-        <div class="kpi-value">
-          {{ global.backPressure ?? '--' }}
-          <span class="unit">kPa</span>
+
+      <!-- 右侧：三张卡片（机组负荷、背压、出口温度），尺寸一致 -->
+      <div class="right-kpi">
+        <div class="kpi">
+          <div class="kpi-label">机组负荷</div>
+          <div class="kpi-value">
+            {{ global.unitLoad ?? '--' }}
+            <span class="unit">MW</span>
+          </div>
         </div>
-      </div>
-      <div class="kpi">
-        <div class="kpi-label">出口温度</div>
-        <div class="kpi-value">
-          {{ global.outletTemperature ?? '--' }}
-          <span class="unit">℃</span>
+        <div class="kpi">
+          <div class="kpi-label">背压</div>
+          <div class="kpi-value">
+            {{ global.backPressure ?? '--' }}
+            <span class="unit">kPa</span>
+          </div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">出口温度</div>
+          <div class="kpi-value">
+            {{ global.outletTemperature ?? '--' }}
+            <span class="unit">℃</span>
+          </div>
         </div>
       </div>
     </div>
@@ -71,9 +132,18 @@
 </template>
 
 <script setup>
-import { reactive, onMounted, onUnmounted } from 'vue'
+import { reactive, onMounted, onUnmounted, ref } from 'vue'
 import { listGparameters } from '@/api/environment/Gparameters'
 import { listOpening } from '@/api/environment/opening'
+
+const localInputs = reactive({
+  coalPrice: null,
+  carbonPrice: null,
+  optimizationBenefit: (Math.random() * 50 + 10).toFixed(2)
+})
+
+const editMode = ref(false)
+const toggleEdit = () => { editMode.value = !editMode.value }
 
 // 背景图路径
 const bgUrl = `${import.meta.env.BASE_URL}CAD/img.png`
@@ -164,6 +234,9 @@ async function fetchOpeningData() {
 
 let refreshTimer = null
 onMounted(() => {
+  // 煤价/碳价初始为随机值（仅当为空时赋值）
+  if (localInputs.coalPrice == null) localInputs.coalPrice = +(300 + Math.random() * 300).toFixed(0)   // 300~600 元/t
+  if (localInputs.carbonPrice == null) localInputs.carbonPrice = +(30 + Math.random() * 50).toFixed(0) // 30~80 元/t
   fetchGlobalParams()
   fetchOpeningData()
   refreshTimer = setInterval(() => {
@@ -188,17 +261,56 @@ onUnmounted(() => {
   background: #fff;
 }
 
-/* 顶部三个全局参数 */
+/* 顶部区域整体布局 */
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
+  gap: 20px;
+}
+
+/* 左上角三个参数区域 */
+.left-global-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 1px solid #e6e6ee;
+  border-radius: 8px;
+  padding: 10px;
+  background: #fafbff;
+}
+.left-item {
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+  color: #334;
+}
+.left-item .label {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.left-item .input {
+  width: 100px;
+}
+
+/* 顶部右侧全局参数 */
 .global-panel {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(200px, 1fr));
-  gap: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
 }
 .kpi {
   border: 1px solid #e6e6ee;
   border-radius: 8px;
   padding: 10px 12px;
   background: #fafbff;
+  flex: 1;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 72px;
 }
 .kpi-label {
   font-size: 13px;
@@ -209,6 +321,9 @@ onUnmounted(() => {
   font-size: 22px;
   font-weight: 700;
   color: #1f5aa6;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 .unit {
   font-size: 12px;
@@ -292,4 +407,24 @@ onUnmounted(() => {
 .line + .line { margin-top: 4px; }
 .label { font-weight: 600; color: #005fa3; margin-right: 4px; }
 .value { font-weight: 500; color: #000; }
+
+/* 顶部统一六卡布局 */
+.left-kpi, .right-kpi {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex: 1;
+  gap: 15px;
+}
+.top-bar {
+  position: relative;
+}
+.edit-btn {
+  margin-left: auto;
+  color: #1f5aa6;
+  font-size: 12px;
+}
+.kpi .input {
+  width: 120px;
+}
 </style>
