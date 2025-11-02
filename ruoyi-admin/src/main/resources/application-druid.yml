@@ -63,7 +63,7 @@ spring:
 # 采集入库配置
 ingest:
   temps:
-    path: "/Users/wang/Documents/data/temperature_data.json"  # 温度 JSON 文件路径
+    path: "/Users/wang/Library/CloudStorage/OneDrive-个人/项目/榆林/data/temperature_data.json"  # 温度 JSON 文件路径
     cron: "0/5 * * * * ?"          # 如使用 Quartz，可忽略；这里保留原注释
     charset: "UTF-8"
     stableMillis: 300               # 文件“稳定窗口”，防止半写
@@ -71,6 +71,6 @@ ingest:
     maxCelsius: 150
 
   weather:
-    path: "/Users/wang/Documents/data/weather_data.json"      # 天气 JSON 文件路径（请改成你的真实路径）
+    path: "/Users/wang/Library/CloudStorage/OneDrive-个人/项目/榆林/data/weather_data.json"      # 天气 JSON 文件路径（请改成你的真实路径）
     charset: "UTF-8"
     stableMillis: 1500

@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.charset.Charset;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -25,8 +26,8 @@ import java.util.*;
 
 /**
  * 读取 weather_data.json：
- * 1) weather_data 数组各指标取【最大值】写入 Eparameters
- * 2) sector_wind_speeds 写入 wind_speed_data
+ * 1) weather_data 数组各指标取【最大值】写入 Eparameters（均为一位小数）
+ * 2) sector_wind_speeds 写入 wind_speed_data（风速两位小数，风向默认 0）
  */
 @Service
 public class WeatherIngestService {
@@ -67,10 +68,9 @@ public class WeatherIngestService {
 
             // 统一时间戳：优先 data.timestamp -> root.timestamp -> 文件mtime -> now
             Instant inst = resolveInstant(root, p);
-            // Eparameters.ts / wind_speed_data.record_time 使用 java.util.Date
             Date tsDate = Date.from(inst);
 
-            /* -------- 1) weather_data → 取最大值，写入 Eparameters -------- */
+            /* -------- 1) weather_data → 取最大值，写入 Eparameters（均保留1位小数） -------- */
             double maxWindSpeed = Double.NEGATIVE_INFINITY;
             double maxWindDir   = Double.NEGATIVE_INFINITY; // 原始角度(°*10)
             double maxTemp      = Double.NEGATIVE_INFINITY;
@@ -93,25 +93,32 @@ public class WeatherIngestService {
                     Double.isFinite(maxTemp) || Double.isFinite(maxHumidity) || Double.isFinite(maxPressure)) {
 
                 Eparameters e = new Eparameters();
-                if (Double.isFinite(maxTemp))      e.setGlobalEnvTemp(Long.valueOf(Math.round(maxTemp)));
-                if (Double.isFinite(maxHumidity))  e.setEnvHumidity(Long.valueOf(Math.round(maxHumidity)));
-                if (Double.isFinite(maxWindSpeed)) e.setEnvWindSpeed(Long.valueOf(Math.round(maxWindSpeed)));
-                if (Double.isFinite(maxPressure))  e.setTowerEnvTemp(Long.valueOf(Math.round(maxPressure)));
+                if (Double.isFinite(maxTemp)) {
+                    e.setGlobalEnvTemp(scale1(maxTemp));
+                }
+                if (Double.isFinite(maxHumidity)) {
+                    e.setEnvHumidity(scale1(maxHumidity));
+                }
+                if (Double.isFinite(maxWindSpeed)) {
+                    e.setEnvWindSpeed(scale1(maxWindSpeed));
+                }
+                if (Double.isFinite(maxPressure)) {
+                    // 你当前设计：pressure 暂存到塔外环境温度
+                    e.setTowerEnvTemp(scale1(maxPressure));
+                }
 
-                // 风向：先 ÷10 再四舍五入为整数（单位：°/10），env_wind_dir 为 SMALLINT -> Java 用 Integer
+// 风向：通信端已输出真实角度(0–360)，直接保留1位小数存储
                 if (Double.isFinite(maxWindDir)) {
-                    int dirDiv10 = (int) Math.round(maxWindDir / 10.0);
-                    e.setEnvWindDir(dirDiv10);
+                    e.setEnvWindDir(scale1(maxWindDir));
                 }
 
                 e.setTs(tsDate);
-                // 若依代码生成的规范命名：insertEparameters
                 eparametersMapper.insertEparameters(e);
 
-                log.info("[weather] Eparameters inserted ts={}, max(ws={},dir/10={},temp={},hum={},pres={})",
+                log.info("[weather] Eparameters inserted ts={}, max(ws={},dir(deg)={},temp={},hum={},pres={})",
                         tsDate,
                         Double.isFinite(maxWindSpeed) ? maxWindSpeed : null,
-                        Double.isFinite(maxWindDir) ? (maxWindDir / 10.0) : null,
+                        Double.isFinite(maxWindDir) ? (maxWindDir) : null,
                         Double.isFinite(maxTemp) ? maxTemp : null,
                         Double.isFinite(maxHumidity) ? maxHumidity : null,
                         Double.isFinite(maxPressure) ? maxPressure : null
@@ -127,7 +134,7 @@ public class WeatherIngestService {
                     if (sw == null || sw.getSector() == null || sw.getWindSpeeds() == null) continue;
                     Integer sector = sw.getSector();
                     for (Map.Entry<String, Double> en : sw.getWindSpeeds().entrySet()) {
-                        Integer sensor = parseTriangleKey(en.getKey()); // "triangle_5" -> 5
+                        Integer sensor = parseTriangleKey(en.getKey()); // "triangle_5"->1, "triangle_10"->2, "triangle_14/15"->3
                         if (sensor == null) continue;
                         Double val = en.getValue();
                         if (val == null || val.isNaN() || val.isInfinite()) continue;
@@ -135,8 +142,10 @@ public class WeatherIngestService {
                         WSpeedData w = new WSpeedData();
                         w.setSector(sector);
                         w.setSensor(sensor);
-                        w.setWindSpeed(new BigDecimal(String.format(Locale.ROOT, "%.2f", val)));
-                        w.setWindDirection(new BigDecimal("0.00")); // JSON 未提供，默认 0
+                        // wind_speed_data.wind_speed 是 decimal(5,2)，保留两位
+                        w.setWindSpeed(scale2(val));
+                        // JSON 未提供风向，默认 0.00
+                        w.setWindDirection(new BigDecimal("0.00"));
                         w.setRecordTime(tsDate);
                         rows.add(w);
                     }
@@ -144,6 +153,13 @@ public class WeatherIngestService {
             }
 
             if (!rows.isEmpty()) {
+                log.info("[weather] sector_wind_speeds parsed rows={}, firstRowExample={}",
+                        rows.size(),
+                        String.format(Locale.ROOT, "sector=%d,sensor=%d,speed=%s,ts=%tF %<tT",
+                                rows.get(0).getSector(),
+                                rows.get(0).getSensor(),
+                                rows.get(0).getWindSpeed().toPlainString(),
+                                rows.get(0).getRecordTime()));
                 wSpeedDataMapper.batchInsert(rows);
                 log.info("[weather] wind_speed_data insert rows={}", rows.size());
             } else {
@@ -202,6 +218,16 @@ public class WeatherIngestService {
                 log.warn("[weather] unknown triangle suffix: {}", suffix);
                 return null;
         }
+    }
+
+    /** 一位小数（HALF_UP） */
+    private BigDecimal scale1(double v) {
+        return BigDecimal.valueOf(v).setScale(1, RoundingMode.HALF_UP);
+    }
+
+    /** 两位小数（HALF_UP） */
+    private BigDecimal scale2(double v) {
+        return BigDecimal.valueOf(v).setScale(2, RoundingMode.HALF_UP);
     }
 
     /** 支持 Quartz 传入路径的便捷包装 */
