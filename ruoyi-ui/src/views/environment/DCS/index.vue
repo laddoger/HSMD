@@ -53,13 +53,13 @@
           </div>
         </div>
         <div class="kpi">
-          <div class="kpi-label">寻优算法经济收益</div>
+          <div class="kpi-label">根据目前的环境、机组负荷、背压等参数，测算后输出建议投入水量、投入扇区、投入方式、投入时长，预计可降低机组背压，提高机组带负荷能力，实现如下经济收益</div>
           <div class="kpi-value">
             {{ localInputs.optimizationBenefit }} <span class="unit">万元</span>
           </div>
         </div>
       </div>
-
+<!--根据目前的环境、机组负荷、背压等参数，测算后输出建议投入水量、投入扇区、投入方式、投入时长，预计可降低机组背压，提高机组带负荷能力，实现如下经济收益-->
       <!-- 右侧：三张卡片（机组负荷、背压、出口温度），尺寸一致 -->
       <div class="right-kpi">
         <div class="kpi">
@@ -86,19 +86,6 @@
       </div>
     </div>
 
-    <!-- 当前扇区阀门开度 -->
-    <div class="sectors-block">
-      <div class="section-title">12个扇区当前喷雾阀门开度（%）</div>
-      <div class="sectors-grid">
-        <div v-for="i in 12" :key="'c'+i" class="sector-card">
-          <div class="sector-name">扇区 {{ i }}</div>
-          <div class="sector-value">
-            {{ currentOpen[i-1] }}<span class="unit">%</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- 背景图 -->
     <div class="dcs-bg" :style="{ backgroundImage: `url('${bgUrl}')` }">
       <div class="data-overlay">
@@ -111,6 +98,20 @@
           <div class="line" v-for="(ln, i) in box.lines" :key="i">
             <span class="label">{{ ln.label }}：</span>
             <span class="value">{{ ln.value }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- 当前扇区阀门开度 -->
+    <div class="sectors-block">
+      <div class="section-title">12个扇区当前喷雾阀门开度（%）</div>
+      <div class="sectors-grid">
+        <div v-for="i in 12" :key="'c'+i" class="sector-card">
+          <div class="sector-name">扇区 {{ i }}</div>
+          <div class="sector-value">
+            {{ currentOpen[i-1] }}<span class="unit">%</span>
           </div>
         </div>
       </div>

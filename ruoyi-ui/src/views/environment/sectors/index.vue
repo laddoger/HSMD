@@ -25,10 +25,10 @@
           <div class="card-title">全局环境风向</div>
           <div class="card-value">{{ global5.windDirection }}°</div>
         </div>
-<!--        <div class="param-card">-->
-<!--          <div class="card-title">塔外环境温度</div>-->
-<!--          <div class="card-value">{{ global5.towerOuterTemp }}</div>-->
-<!--        </div>-->
+        <div class="param-card">
+          <div class="card-title">全局环境气压</div>
+          <div class="card-value">{{ global5.towerOuterTemp }}</div>
+        </div>
       </div>
 
       <!-- 右侧环形 SVG 区域（扇区数据来自后端） -->
@@ -38,45 +38,64 @@
             :height="svgSize"
             :viewBox="`0 0 ${svgSize} ${svgSize}`"
         >
-          <!-- 中心圆（塔体占位） -->
-          <circle
-              :cx="cx"
-              :cy="cy"
-              :r="innerRadius - 6"
-              class="center-circle"
-          />
-          <!-- 12 个扇形 -->
-          <g v-for="i in totalSectors" :key="i">
-            <path
-                :d="sectorPath(i - 1)"
-                :fill="sectorColor(i - 1)"
-                stroke="#ffffff"
-                stroke-width="1"
-                class="sector-path"
-                @click="onSectorClick(i)"
+          <!-- 环形整体旋转+水平翻转 -->
+          <g :transform="`translate(${cx * 2}, 0) scale(-1, 1) rotate(${ -90 + ringRotateDeg }, ${cx}, ${cy})`">            <!-- 中心圆（塔体占位） -->
+            <circle
+                :cx="cx"
+                :cy="cy"
+                :r="innerRadius - 6"
+                class="center-circle"
             />
-            <!-- 扇区内展示：平均风速 -->
-            <text
-                :x="labelPos(i - 1).x"
-                :y="labelPos(i - 1).y - 8"
+            <!-- 12 个扇形 -->
+            <g v-for="i in totalSectors" :key="i">
+              <path
+                  :d="sectorPath(i - 1)"
+                  :fill="sectorColor(i - 1)"
+                  stroke="#ffffff"
+                  stroke-width="1"
+                  class="sector-path"
+                  @click="onSectorClick(i)"
+              />
+            </g>
+          </g>
+          <!-- 文字图层：不受父级旋转/翻转影响，位置经计算后直接绘制 -->
+          <g class="labels-layer">
+            <g v-for="i in totalSectors" :key="'label-'+i">
+              <text
+                :x="applyParentTransform(labelPos(i - 1)).x"
+                :y="applyParentTransform(labelPos(i - 1)).y - 8"
                 class="sector-line speed"
                 text-anchor="middle"
                 alignment-baseline="middle"
                 pointer-events="none"
-            >
-              {{ avgSpeedText(i) }}
-            </text>
-            <!-- 扇区编号：沿内环显示 -->
-            <text
-                :x="idPos(i - 1).x"
-                :y="idPos(i - 1).y"
+              >
+                {{ avgSpeedText(i) }}
+              </text>
+              <text
+                :x="applyParentTransform(idPos(i - 1)).x"
+                :y="applyParentTransform(idPos(i - 1)).y"
                 class="sector-id"
                 text-anchor="middle"
                 alignment-baseline="middle"
                 pointer-events="none"
-            >
-              {{ i }}
-            </text>
+              >
+                {{ i }}
+              </text>
+            </g>
+          </g>
+          <!-- 中心风向罗盘（全局风向） -->
+          <g class="center-compass" :transform="`translate(${cx}, ${cy})`">
+            <circle r="86" class="compass-ring"/>
+            <!-- 四向标注 -->
+            <text x="0" y="-98" class="compass-label" text-anchor="middle">北</text>
+            <text x="0" y="112" class="compass-label" text-anchor="middle">南</text>
+            <text x="-112" y="4" class="compass-label" text-anchor="middle">西</text>
+            <text x="112" y="4" class="compass-label" text-anchor="middle">东</text>
+            <!-- 风向箭头：上为北，随角度旋转 -->
+            <g :transform="`rotate(${dirAngle})`" class="compass-arrow">
+              <path d="M0,14 L0,-72"/>
+              <path d="M0,-72 L-7,-58 M0,-72 L7,-58"/>
+            </g>
           </g>
         </svg>
       </div>
@@ -136,6 +155,8 @@ export default {
       outerRadius: 260,
       innerRadius: 110,
       totalSectors: 12,
+      // 额外环形旋转（度）：在原有 -90° 的基础上叠加
+      ringRotateDeg: 180,
 
       // 左侧 5 项全局参数
       global5: null,
@@ -144,6 +165,13 @@ export default {
 
       // 扇区风速数据缓存：{ [sectorId]: { speeds: [s1,s2,s3] } }
       sectorWindMap: {}
+    }
+  },
+  computed: {
+    dirAngle() {
+      const d = this.global5 && this.global5.windDirection
+      const n = Number(d)
+      return isNaN(n) ? 0 : n
     }
   },
   mounted() {
@@ -200,7 +228,7 @@ export default {
             envHumidity: fmt(data.envHumidity, '%'),
             windSpeed: fmt(data.windSpeed, 'm/s'),
             windDirection: data.windDirection ?? '--',
-            towerOuterTemp: fmt(data.towerOuterTemp, '℃')
+            towerOuterTemp: fmt(data.towerOuterTemp, 'kPa')
           }
         }
       } catch (e) {
@@ -279,6 +307,20 @@ export default {
     },
 
     /* ------------------------- SVG 计算：扇形路径 / 文本位置 ------------------------- */
+    // 将点 (x,y) 按父组的 transform: translate(cx*2,0) scale(-1,1) rotate(-90,cx,cy) 进行变换
+    applyParentTransform(pt) {
+      const cx = this.cx, cy = this.cy
+      // const rad = (-90 * Math.PI) / 180
+      const rad = ((-90 + this.ringRotateDeg) * Math.PI) / 180
+      // 1) 围绕 (cx,cy) 旋转 -90°
+      const x1 = Math.cos(rad) * (pt.x - cx) - Math.sin(rad) * (pt.y - cy) + cx
+      const y1 = Math.sin(rad) * (pt.x - cx) + Math.cos(rad) * (pt.y - cy) + cy
+      // 2) 全局坐标系水平翻转（关于 y 轴镜像）
+      const x2 = -x1
+      const y2 = y1
+      // 3) 平移 translate(cx*2, 0)
+      return { x: x2 + cx * 2, y: y2 }
+    },
     sectorPath(index) {
       const slice = 360 / this.totalSectors
       const startAngle = -90 + index * slice
@@ -424,12 +466,36 @@ export default {
 
 /* 弹窗 loading */
 .modal-loading { text-align:center; padding:24px; color:#666; }
-</style>
 
-/* 扇区编号：沿内环 */
 .sector-id {
-font-size: 11px;
-font-weight: 700;
-fill: #333;
-opacity: 0.9;
+  font-size: 11px;
+  font-weight: 700;
+  fill: #333;
+  opacity: 0.9;
 }
+
+.global-wind-arrow path {
+  fill: none;
+  stroke-linecap: round;
+}
+
+/* 中心风向罗盘样式 */
+.center-compass .compass-ring {
+  fill: rgba(47, 111, 178, 0.06);
+  stroke: rgba(47, 111, 178, 0.18);
+  stroke-width: 2;
+}
+.center-compass .compass-label {
+  fill: #2f6fb2;
+  font-weight: 700;
+  font-size: 16px;
+  opacity: 0.95;
+}
+.center-compass .compass-arrow path {
+  stroke: #2f6fb2;
+  stroke-width: 3;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+</style>
